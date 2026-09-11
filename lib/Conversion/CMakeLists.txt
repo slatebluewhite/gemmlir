@@ -1,0 +1,3 @@
+add_subdirectory(LinalgToGemmlir)
+add_subdirectory(GemmlirToLLVM)
+add_subdirectory(ForceQuantizedMatmul)

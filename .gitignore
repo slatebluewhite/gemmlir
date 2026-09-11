@@ -1,0 +1,7 @@
+build/
+build-*/
+*.o
+*.ll
+!docs/reference/**/*.ll
+.cache/
+compile_commands.json
