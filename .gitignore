@@ -1,7 +1,23 @@
+# Build trees
 build/
 build-*/
+.cache/
+compile_commands.json
+
+# Objects and LLVM IR, except the reference dumps docs/ walks through
 *.o
 *.ll
 !docs/reference/**/*.ll
-.cache/
-compile_commands.json
+
+# Python
+__pycache__/
+*.pyc
+
+# What demo/run.sh regenerates: about 11 MB a model of image bytes and
+# reference logits, and the MLIR they were calibrated with.
+demo/*_demo_data.h
+demo/*_demo_cal.mlir
+demo/*_demo_raw.mlir
+
+# Local paths: `make` reads this if it exists (see the head of the Makefile).
+config.mk
