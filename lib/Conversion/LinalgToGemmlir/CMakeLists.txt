@@ -3,6 +3,9 @@ add_mlir_library(MLIRLinalgToGemmlir
 
   LINK_LIBS PUBLIC
   MLIRIR
+  MLIRArithDialect
+  MLIRMathDialect
+  MLIRSCFDialect
   MLIRFuncDialect
   MLIRLinalgDialect
   MLIRMemRefDialect
