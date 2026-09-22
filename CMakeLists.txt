@@ -5,6 +5,13 @@ set(CMAKE_BUILD_WITH_INSTALL_NAME_DIR ON)
 set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ standard to conform to")
 
 option(GEMMLIR_BUILD_RUNTIME "Build the Gemmini runtime shim (needs a RISC-V C compiler)" ON)
+option(GEMMLIR_NORMALIZATIONS
+       "Build the runtime with Gemmini's normalization unit (LayerNorm, softmax). \
+Needs a bitstream whose Gemmini was built with norms = true; without one the RTL \
+asserts. The two defines it adds are exactly what GemminiConfigs.scala emits for \
+such a config -- the header shipped in third_party predates the norm-enabled \
+board, so it does not carry them." OFF)
+
 set(GEMMLIR_GEMMINI_PARAMS "" CACHE FILEPATH
     "gemmini_params.h generated for your hardware config (default: the one shipped in third_party/gemmini-rocc-tests)")
 set(GEMMLIR_RISCV_CC "" CACHE FILEPATH "RISC-V C compiler used for the runtime shim (default: riscv64-unknown-elf-gcc on PATH)")

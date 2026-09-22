@@ -22,8 +22,10 @@ def Gemmlir_Dialect : Dialect {
     let cppNamespace = "::mlir::gemmlir";
 
     let useDefaultTypePrinterParser = 1;
+    let useDefaultAttributePrinterParser = 1;
     let extraClassDeclaration = [{
         void registerTypes();
+        void registerAttributes();
     }];
 }
 

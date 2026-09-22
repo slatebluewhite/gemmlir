@@ -8,6 +8,7 @@ add_mlir_dialect_library(MLIRGemmlir
 
         DEPENDS
         MLIRGemmlirOpsIncGen
+        MLIRGemmlirAttrsIncGen
         MLIRGemmlirPassesIncGen
 
         LINK_LIBS PUBLIC
