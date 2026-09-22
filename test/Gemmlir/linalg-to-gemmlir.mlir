@@ -1,4 +1,5 @@
 // RUN: gemmlir-opt --convert-linalg-to-gemmlir %s | FileCheck %s
+// RUN: not gemmlir-opt --convert-linalg-to-gemmlir %S/Inputs/matmul-i8-out.mlir 2>&1 | FileCheck %s --check-prefix=I8OUT
 
 // i8 x i8 -> i32 accumulation selects matmul_i8.
 // CHECK-LABEL: func.func @matmul_i32_out
@@ -9,10 +10,10 @@ func.func @matmul_i32_out(%A: memref<128x128xi8>, %B: memref<128x256xi8>, %C: me
   return
 }
 
-// i8 x i8 -> i8 output selects the scaled variant.
-// CHECK-LABEL: func.func @matmul_i8_out
-// CHECK:         gemmlir.matmul_i8_scale(%arg0, %arg1, %arg2) : (memref<64x64xi8> x memref<64x64xi8>) -> memref<64x64xi8>
-func.func @matmul_i8_out(%A: memref<64x64xi8>, %B: memref<64x64xi8>, %C: memref<64x64xi8>) {
-  linalg.matmul ins(%A, %B : memref<64x64xi8>, memref<64x64xi8>) outs(%C : memref<64x64xi8>)
-  return
-}
+// C is a plain argument, so its incoming value has to be accumulated into: the
+// lowering does that by also passing it as the runtime's bias operand.
+// CHECK-NOT:     accumulate = false
+
+// i8 x i8 -> i8 is refused: linalg.matmul wraps, the accelerator's scaled path
+// saturates. See Inputs/matmul-i8-out.mlir.
+// I8OUT: error: 'linalg.matmul' op i8 output cannot be offloaded

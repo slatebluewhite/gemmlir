@@ -16,6 +16,7 @@
 // CHECK:         llvm.fptosi
 // ...and the int8 matmul itself goes to Gemmini.
 // CHECK:         llvm.inline_asm
+// CHECK-NEXT:    llvm.call @gemmlir_flush()
 // CHECK-NEXT:    llvm.call @tiled_matmul_auto(
 // CHECK-NOT:     quant.
 // CHECK-NOT:     tensor.
