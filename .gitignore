@@ -13,6 +13,11 @@ compile_commands.json
 __pycache__/
 *.pyc
 
+# What examples/mlperf-tiny/export.py regenerates
+examples/mlperf-tiny/*_cal.mlir
+examples/mlperf-tiny/*_raw.mlir
+examples/mlperf-tiny/*_data.h
+
 # What demo/run.sh regenerates: about 11 MB a model of image bytes and
 # reference logits, and the MLIR they were calibrated with.
 demo/*_demo_data.h
