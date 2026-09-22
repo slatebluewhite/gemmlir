@@ -1,6 +1,10 @@
-# Thin wrappers around the commands in README. Override variables on the command line:
+# Thin wrappers around the commands in README. Override variables on the command
+# line, or once and for all in an untracked `config.mk`:
 #   make llvm LLVM_SRC=~/llvm-project JOBS=8
 #   make build MLIR_DIR=/path/to/lib/cmake/mlir
+#   echo 'LLVM_SRC = /somewhere/llvm-project' > config.mk
+-include config.mk
+
 LLVM_SRC    ?= $(HOME)/llvm-project
 LLVM_COMMIT ?= 367e3889fabc
 LLVM_BUILD  ?= $(LLVM_SRC)/build
@@ -10,17 +14,22 @@ LIT         ?= $(LLVM_BUILD)/bin/llvm-lit
 BUILD       ?= build
 JOBS        ?= $(shell nproc)
 
-.PHONY: all build test example llvm update-submodule apt-install clean
+.PHONY: all build test example conv-example llvm update-submodule apt-install clean
 
 all: build
 
 apt-install:                      ## host packages needed to build LLVM and gemmlir
 	sudo apt-get install -y build-essential cmake ninja-build python3 git
 
-update-submodule:                 ## gemmini-rocc-tests, headers only (include/ + rocc-software/src)
+update-submodule:                 ## gemmini-rocc-tests, headers only, + this project's patch
 	git submodule update --init third_party/gemmini-rocc-tests
 	git -C third_party/gemmini-rocc-tests sparse-checkout set include rocc-software
 	git -C third_party/gemmini-rocc-tests submodule update --init rocc-software
+	@# The submodule is upstream ucb-bar, so the changes this project needs live
+	@# here as a patch rather than as a fork. Idempotent: skipped if applied.
+	@git -C third_party/gemmini-rocc-tests apply --check --reverse ../gemmini-rocc-tests.patch 2>/dev/null \
+	  && echo "gemmini-rocc-tests.patch already applied" \
+	  || git -C third_party/gemmini-rocc-tests apply ../gemmini-rocc-tests.patch
 
 llvm:                             ## clone, check out and build LLVM/MLIR with the RISCV target (~1 h)
 	test -d $(LLVM_SRC)/.git || git clone https://github.com/llvm/llvm-project.git $(LLVM_SRC)
@@ -37,8 +46,11 @@ build:                            ## configure and build gemmlir-opt
 test: build                       ## lit tests
 	ninja -C $(BUILD) check-gemmlir
 
-example: build                    ## lower examples/matmul_i8.mlir to matmul.o
-	GEMMLIR_BUILD=$(BUILD) LLVM_BIN=$(LLVM_BUILD)/bin ./scripts/compile.sh examples/matmul_i8.mlir -o matmul.o
+example: build                    ## lower examples/matmul_i8.mlir to $(BUILD)/matmul.o
+	GEMMLIR_BUILD=$(BUILD) LLVM_BIN=$(LLVM_BUILD)/bin ./scripts/compile.sh examples/matmul_i8.mlir -o $(BUILD)/matmul.o
+
+conv-example: build               ## lower examples/conv_i8.mlir to $(BUILD)/conv.o
+	GEMMLIR_BUILD=$(BUILD) LLVM_BIN=$(LLVM_BUILD)/bin ./scripts/compile.sh examples/conv_i8.mlir -o $(BUILD)/conv.o
 
 clean:
-	rm -rf $(BUILD) matmul.o
+	rm -rf $(BUILD)
