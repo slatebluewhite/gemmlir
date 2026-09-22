@@ -12,6 +12,67 @@ set(LIBS
         MLIRLinalgToGemmlir
         MLIRForceQuantizedMatmul
         MLIRGemmlirToLLVM
+        MLIRGemmlirLegalizeBarePtrReturns
+        MLIRGemmlirApproximateExp
+        MLIRGemmlirAveragePoolToContraction
+        MLIRGemmlirConvNchwToNhwc
+        MLIRGemmlirFoldBatchNorm
+        MLIRGemmlirFoldChannelShuffle
+        MLIRGemmlirFoldConstantElementwise
+        MLIRGemmlirFoldScalesIntoBroadcast
+        MLIRGemmlirFillOnlyTheBorder
+        MLIRGemmlirFillToMemset
+        MLIRGemmlirGatherToMemrefCopy
+        MLIRGemmlirMaterializePadSources
+        MLIRGemmlirUnbatchSingleMatmul
+        MLIRGemmlirOrderLoopsForLocality
+        MLIRGemmlirPlaceCacheFlushes
+        MLIRGemmlirPlanStaticBuffers
+        MLIRGemmlirPointwiseConvToMatmul
+        MLIRGemmlirQuantizeBiasIntoAccumulator
+        MLIRGemmlirQuantizeUnfoldableTails
+        MLIRGemmlirExpandStaticMemrefCopy
+        MLIRGemmlirFoldRelayoutIntoProducers
+        MLIRGemmlirFuseMultiplyAdd
+        MLIRGemmlirHoistInvariantReciprocal
+        MLIRGemmlirReciprocalForDivision
+        MLIRGemmlirSelectToMinMax
+        MLIRGemmlirSinkElementwiseIntoReaders
+        MLIRGemmlirTableForInt8Elementwise
+        MLIRGemmlirPromoteReductionAccumulator
+        MLIRGemmlirUnrollAcceleratorLoops
+        MLIRGemmlirUnrollElementwiseLoops
+        MLIRGemmlirBatchNormInFixedPoint
+        MLIRGemmlirClampAsRangeCheck
+        MLIRGemmlirSplitMatmulPerRequantize
+        MLIRGemmlirSinkMonotoneBelowMaxPool
+        MLIRGemmlirFoldRequantizeIntoSliceMatmuls
+        MLIRGemmlirHoistBroadcastInvariants
+        MLIRGemmlirHoldPerChannelInRegisters
+        MLIRGemmlirSeparateMaxPool
+        MLIRGemmlirCombineChannelAffine
+        MLIRGemmlirCombineConstantScales
+        MLIRGemmlirPackInt8MaxPool
+        MLIRGemmlirPackInt8TableLookup
+        MLIRGemmlirDepthwiseAsBlockDiagonal
+        MLIRGemmlirDropClampBelowRelu
+        MLIRGemmlirPoolWithoutPadding
+        MLIRGemmlirProbeBuffers
+        MLIRGemmlirRelaxFloatMaxPool
+        MLIRGemmlirSetTargetDataLayout
+        MLIRGemmlirSaturateConstantCasts
+        MLIRGemmlirUnrollReductionWindows
+        MLIRGemmlirDropUnreadPadding
+        MLIRGemmlirRequantizeBeforePooling
+        MLIRGemmlirShareBranchQuantization
+        MLIRGemmlirSplitGroupedConv
+        MLIRGemmlirSplitResidualAdd
+        MLIRGemmlirRoundQuantizedCasts
+        MLIRGemmlirConvToImg2Col
+        MLIRGemmlirHoistElementwiseBeforeGather
+        MLIRGemmlirFuseElementwiseAroundMatmul
+        MLIRGemmlirRaiseContractionToMatmul
+        MLIRGemmlirRaiseSpatialSumToPool
         )
 add_llvm_executable(gemmlir-opt gemmlir-opt.cpp)
 llvm_update_compile_flags(gemmlir-opt)
