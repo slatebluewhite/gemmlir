@@ -3,8 +3,10 @@
 #   make llvm LLVM_SRC=~/llvm-project JOBS=8
 #   make build MLIR_DIR=/path/to/lib/cmake/mlir
 #   echo 'LLVM_SRC = /somewhere/llvm-project' > config.mk
+#   echo 'RISCV_CC = riscv64-linux-gnu-gcc'    >> config.mk
 -include config.mk
 
+RISCV_CC    ?=
 LLVM_SRC    ?= $(HOME)/llvm-project
 LLVM_COMMIT ?= 367e3889fabc
 LLVM_BUILD  ?= $(LLVM_SRC)/build
@@ -31,7 +33,8 @@ llvm:                             ## clone, check out and build LLVM/MLIR with t
 	ninja -C $(LLVM_BUILD) -j$(JOBS)
 
 build:                            ## configure and build gemmlir-opt
-	cmake -G Ninja -S . -B $(BUILD) -DMLIR_DIR=$(MLIR_DIR) -DLLVM_DIR=$(LLVM_DIR) -DLLVM_EXTERNAL_LIT=$(LIT)
+	cmake -G Ninja -S . -B $(BUILD) -DMLIR_DIR=$(MLIR_DIR) -DLLVM_DIR=$(LLVM_DIR) -DLLVM_EXTERNAL_LIT=$(LIT) \
+	  $(if $(RISCV_CC),-DGEMMLIR_RISCV_CC=$(shell command -v $(RISCV_CC) || echo $(RISCV_CC)),)
 	ninja -C $(BUILD) -j$(JOBS) gemmlir-opt
 
 test: build                       ## lit tests

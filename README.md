@@ -36,7 +36,8 @@ Each target is a few lines in the `Makefile`; override `LLVM_SRC`, `MLIR_DIR`, `
 and for all in an untracked `config.mk`:
 
 ```bash
-echo 'LLVM_SRC = /somewhere/llvm-project' > config.mk
+echo 'LLVM_SRC = /somewhere/llvm-project'  > config.mk
+echo 'RISCV_CC = riscv64-linux-gnu-gcc'   >> config.mk   # if the triple differs
 ```
 
 `-DGEMMLIR_GEMMINI_PARAMS=<file>` (cmake) selects the `gemmini_params.h` generated for
