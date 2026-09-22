@@ -134,6 +134,29 @@ call gemmlir_memset    x2       padding
 
 Four calls into the runtime, from fourteen `linalg` operations.
 
+## It runs
+
+The point of a walkthrough is lost if the thing at the end does not work, so
+the last stage is checked the way every change to this project is checked:
+
+```
+  2048 inputs -> 1024 outputs   relative L2 0.0098      (accelerator)
+  2048 inputs -> 1024 outputs   relative L2 0.0098      (CPU reference)
+  byte compare: 0 of 40 differ from the CPU reference
+```
+
+`relative L2` is against PyTorch's own float answer for the same input, so the
+first number says the int8 pipeline is right. The second says the accelerator
+agrees with gemmini.h's own CPU implementation of the same calls -- byte for
+byte, forty runs, one process each, because one fault on this board is
+intermittent.
+
+```bash
+../../../scripts/compile.sh 03_calibrated.mlir --quantize -o /tmp/wt.o
+riscv64-linux-gnu-gcc -O2 -static -I. run_on_board.c /tmp/wt.o \
+    ../../../build/runtime/gemmlir_rt.o -lm -o wt_g       # and _cpu.o for the reference
+```
+
 ## Regenerating
 
 ```bash

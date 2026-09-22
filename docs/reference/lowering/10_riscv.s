@@ -38,10 +38,10 @@ forward:                                # @forward
 	addi	s2, s2, %lo(.L__gemmlir_arena_forward_0)
 	li	t2, 7
 	li	a3, 15
-	lui	a0, 270520
+	lui	a0, 270214
 	li	a4, 256
 	addi	s3, s2, 2047
-	addi	a0, a0, 1337
+	addi	a0, a0, -1729
 	addi	t1, s3, 33
 	fmv.w.x	fa5, a0
 	lui	a6, 2
@@ -207,7 +207,7 @@ forward:                                # @forward
 	li	t2, 16
 	li	t3, 8
 	li	a5, 3
-	lui	a6, 240831
+	lui	a6, 241751
 	li	a0, 1
 	li	a1, 16
 	li	a2, 16
@@ -218,7 +218,7 @@ forward:                                # @forward
 	sd	t4, 16(sp)
 	sd	a5, 24(sp)
 	li	a5, 16
-	addi	s1, a6, -1959
+	addi	s1, a6, 230
 	fmv.w.x	fa0, s1
 	li	a6, 16
 	addi	s1, a7, -1472
@@ -548,15 +548,15 @@ forward:                                # @forward
 	li	s7, 15
 	lui	s3, %hi(.L__constant_16xf32+16)
 	addi	s3, s3, %lo(.L__constant_16xf32+16)
-	lui	a3, 228133
-	addi	a3, a3, 394
+	lui	a3, 227729
+	addi	a3, a3, 1103
 	fmv.w.x	fa5, a3
-	lui	a3, 248917
+	lui	a3, 248470
 	fmv.w.x	fa4, zero
 	addi	t2, a0, -304
 	add	a7, a7, s2
 	addi	t0, a2, -1465
-	addi	a0, a3, 1234
+	addi	a0, a3, 1708
 	add	t2, t2, s2
 	add	t0, t0, s2
 	fmv.w.x	fa3, a0
@@ -1457,22 +1457,22 @@ forward:                                # @forward
 	.type	.L__constant_16xi32,@object     # @__constant_16xi32
 	.p2align	6, 0x0
 .L__constant_16xi32:
-	.word	4294965746                      # 0xfffff9f2
-	.word	4294964822                      # 0xfffff656
-	.word	1465                            # 0x5b9
-	.word	4294964775                      # 0xfffff627
-	.word	2753                            # 0xac1
-	.word	5854                            # 0x16de
-	.word	4294961383                      # 0xffffe8e7
-	.word	1243                            # 0x4db
-	.word	4294962829                      # 0xffffee8d
-	.word	4294959881                      # 0xffffe309
-	.word	4294961425                      # 0xffffe911
-	.word	4294959360                      # 0xffffe100
-	.word	4294965885                      # 0xfffffa7d
-	.word	13854                           # 0x361e
-	.word	4294961616                      # 0xffffe9d0
-	.word	4294966738                      # 0xfffffdd2
+	.word	4294965917                      # 0xfffffa9d
+	.word	4294965094                      # 0xfffff766
+	.word	1304                            # 0x518
+	.word	4294965052                      # 0xfffff73c
+	.word	2450                            # 0x992
+	.word	5210                            # 0x145a
+	.word	4294962033                      # 0xffffeb71
+	.word	1106                            # 0x452
+	.word	4294963321                      # 0xfffff079
+	.word	4294960697                      # 0xffffe639
+	.word	4294962071                      # 0xffffeb97
+	.word	4294960233                      # 0xffffe469
+	.word	4294966040                      # 0xfffffb18
+	.word	12331                           # 0x302b
+	.word	4294962241                      # 0xffffec41
+	.word	4294966800                      # 0xfffffe10
 	.size	.L__constant_16xi32, 64
 
 	.type	.L__constant_144x16xi8,@object  # @__constant_144x16xi8

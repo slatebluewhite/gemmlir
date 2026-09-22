@@ -26,7 +26,7 @@ module attributes {torch.debug_module_name = "Block"} {
     %transposed = linalg.transpose ins(%padded : tensor<1x8x18x18xf32>) outs(%1 : tensor<1x18x18x8xf32>) permutation = [0, 2, 3, 1] 
     %2 = tensor.empty() : tensor<1x16x16x16xf32>
     %3 = linalg.fill ins(%cst_7 : f32) outs(%2 : tensor<1x16x16x16xf32>) -> tensor<1x16x16x16xf32>
-    %4 = linalg.conv_2d_nhwc_hwcf {gemmlir.activation_scale = 2.866964265e-02 : f64, gemmlir.output_scale = 2.408829636e-02 : f64, dilations = dense<1> : vector<2xi64>, strides = dense<1> : vector<2xi64>} ins(%transposed, %cst_0 : tensor<1x18x18x8xf32>, tensor<3x3x8x16xf32>) outs(%3 : tensor<1x16x16x16xf32>) -> tensor<1x16x16x16xf32>
+    %4 = linalg.conv_2d_nhwc_hwcf {gemmlir.activation_scale = 3.221278303e-02 : f64, gemmlir.output_scale = 2.067884122e-02 : f64, dilations = dense<1> : vector<2xi64>, strides = dense<1> : vector<2xi64>} ins(%transposed, %cst_0 : tensor<1x18x18x8xf32>, tensor<3x3x8x16xf32>) outs(%3 : tensor<1x16x16x16xf32>) -> tensor<1x16x16x16xf32>
     %5 = tensor.empty() : tensor<1x16x16x16xf32>
     %6 = linalg.generic {indexing_maps = [#map, #map1, #map1, #map1, #map1, #map2], iterator_types = ["parallel", "parallel", "parallel", "parallel"]} ins(%4, %cst_4, %cst_3, %cst_6, %cst_5 : tensor<1x16x16x16xf32>, tensor<16xf32>, tensor<16xf32>, tensor<16xf32>, tensor<16xf32>) outs(%5 : tensor<1x16x16x16xf32>) {
     ^bb0(%in: f32, %in_13: f32, %in_14: f32, %in_15: f32, %in_16: f32, %out: f32):
@@ -53,7 +53,7 @@ module attributes {torch.debug_module_name = "Block"} {
     %transposed_11 = linalg.transpose ins(%padded_10 : tensor<1x16x18x18xf32>) outs(%8 : tensor<1x18x18x16xf32>) permutation = [0, 2, 3, 1] 
     %9 = tensor.empty() : tensor<1x16x16x16xf32>
     %10 = linalg.fill ins(%cst_7 : f32) outs(%9 : tensor<1x16x16x16xf32>) -> tensor<1x16x16x16xf32>
-    %11 = linalg.conv_2d_nhwc_hwcf {gemmlir.activation_scale = 2.408829636e-02 : f64, gemmlir.output_scale = 1.164807109e-02 : f64, dilations = dense<1> : vector<2xi64>, strides = dense<1> : vector<2xi64>} ins(%transposed_11, %cst : tensor<1x18x18x16xf32>, tensor<3x3x16x16xf32>) outs(%10 : tensor<1x16x16x16xf32>) -> tensor<1x16x16x16xf32>
+    %11 = linalg.conv_2d_nhwc_hwcf {gemmlir.activation_scale = 2.067884122e-02 : f64, gemmlir.output_scale = 1.041761627e-02 : f64, dilations = dense<1> : vector<2xi64>, strides = dense<1> : vector<2xi64>} ins(%transposed_11, %cst : tensor<1x18x18x16xf32>, tensor<3x3x16x16xf32>) outs(%10 : tensor<1x16x16x16xf32>) -> tensor<1x16x16x16xf32>
     %12 = tensor.empty() : tensor<1x16x16x16xf32>
     %13 = linalg.generic {indexing_maps = [#map, #map1, #map1, #map1, #map1, #map2], iterator_types = ["parallel", "parallel", "parallel", "parallel"]} ins(%11, %cst_4, %cst_3, %cst_2, %cst_1 : tensor<1x16x16x16xf32>, tensor<16xf32>, tensor<16xf32>, tensor<16xf32>, tensor<16xf32>) outs(%12 : tensor<1x16x16x16xf32>) {
     ^bb0(%in: f32, %in_13: f32, %in_14: f32, %in_15: f32, %in_16: f32, %out: f32):

@@ -97,6 +97,17 @@ llvmd = opt(host, LOWER, "08_llvm_dialect.mlir")
 
 r = subprocess.run([TRANSLATE, "--mlir-to-llvmir"], input=llvmd, capture_output=True, text=True)
 w("09_llvm.ll", r.stdout)
+# The input and what PyTorch answers for it, so the object can be run and
+# checked rather than only read.
+with torch.no_grad():
+    y = build()(x)
+with open(os.path.join(HERE, "11_data.h"), "w") as f:
+    f.write("static const float torch_x[%d] = {%s};\n"
+            % (x.numel(), ",".join("%.9ef" % v for v in x.flatten())))
+    f.write("static const float torch_y[%d] = {%s};\n"
+            % (y.numel(), ",".join("%.9ef" % v for v in y.flatten())))
+print("  11_data.h  (input and PyTorch's answer)")
+
 r2 = subprocess.run([LLC, "-O2", "-march=riscv64", "-mattr=+m,+a,+f,+d,+c",
                      "-target-abi=lp64d", "-filetype=asm"], input=r.stdout,
                     capture_output=True, text=True)
