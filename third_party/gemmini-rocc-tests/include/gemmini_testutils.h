@@ -272,7 +272,9 @@ static int is_equal_transposed(elem_t x[DIM][DIM], elem_t y[DIM][DIM]) {
 
 static uint64_t read_cycles() {
     uint64_t cycles;
-    asm volatile ("rdcycle %0" : "=r" (cycles));
+    // rdtime, not rdcycle: a modern kernel traps user-mode rdcycle, so every
+    // timed test dies with SIGILL on real hardware. Same patch file as above.
+    asm volatile ("rdtime %0" : "=r" (cycles));
     return cycles;
 
     // const uint32_t * mtime = (uint32_t *)(33554432 + 0xbff8);

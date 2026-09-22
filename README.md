@@ -17,7 +17,7 @@ Pass pipelines: [docs/pipeline.md](docs/pipeline.md).
 ```
 LLVM/MLIR >= 22 (tested: llvm-project 367e3889fabc), built with the RISCV target
 CMake >= 3.20, Ninja, Python 3
-gemmini-rocc-tests (submodule, 7c540b3; headers only)
+gemmini-rocc-tests headers (vendored in third_party/; nothing to fetch)
 riscv64-unknown-linux-gnu-gcc, a Gemmini-enabled Rocket SoC running Linux   (to run)
 ```
 
@@ -26,7 +26,6 @@ riscv64-unknown-linux-gnu-gcc, a Gemmini-enabled Rocket SoC running Linux   (to 
 ```bash
 git clone <this repo> gemmlir && cd gemmlir
 make apt-install          # cmake, ninja, python3, compiler
-make update-submodule     # gemmini.h and friends, plus this project's patch to them
 make llvm                 # clone + build llvm-project at 367e3889fabc into ~/llvm-project (~1 h)
 make                      # gemmlir-opt into build/
 make test                 # lit tests
@@ -43,10 +42,12 @@ echo 'LLVM_SRC = /somewhere/llvm-project' > config.mk
 `-DGEMMLIR_GEMMINI_PARAMS=<file>` (cmake) selects the `gemmini_params.h` generated for
 your hardware instead of the submodule default.
 
-The submodule is upstream `ucb-bar/gemmini-rocc-tests`, so what this project
-changes in it -- memoizing the tiling search, choosing the tiling by DRAM traffic,
-and `rdtime` for `read_cycles` -- lives in `third_party/gemmini-rocc-tests.patch`
-rather than in a fork. `make update-submodule` applies it and is idempotent.
+`third_party/gemmini-rocc-tests/` holds upstream's headers as plain files --
+upstream stopped moving, so a submodule bought a permanently dirty tree and
+nothing else. `PROVENANCE.md` there records the commits they came from, and the
+commit that added them is the untouched upstream, so `git diff` against it is
+exactly what this project changed: the tiling search memoized, the tiling chosen
+by DRAM traffic, and `rdtime` for `read_cycles`.
 
 ## Quantization
 `--quantize` puts an f32 model on the int8 path. Weight scales are measured from
