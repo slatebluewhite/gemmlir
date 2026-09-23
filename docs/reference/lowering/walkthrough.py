@@ -85,7 +85,7 @@ def array(name, span):
 # starting the range below them leaves the accelerator conversion an empty
 # string -- which looks exactly like a pipeline that converts nothing.
 FRONT = array("FRONT", "66,128p")
-MID = array("MID", "/^MID=(/p")
+MID = array("MID", "/^MID=(/,/convert-scf-to-cf)$/p")
 LOWER = array("LOWER", "/^LOWER=(/,/--set-target-data-layout)$/p")
 
 cut = next(i for i, a in enumerate(FRONT) if a.startswith("--one-shot-bufferize"))

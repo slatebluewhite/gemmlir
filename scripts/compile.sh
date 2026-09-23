@@ -89,6 +89,8 @@ if [ "$quantize" = 1 ]; then
          --share-branch-quantization --canonicalize
          --lower-quant-ops --round-quantized-casts --strip-func-quant-types --canonicalize
          --convert-elementwise-to-linalg --canonicalize
+         # fuse and hoist run to a fixed point by hand: each opens work for the
+         # other. Removing the repeats changes the object of every model tried.
          --fuse-elementwise-around-matmul --canonicalize
          --hoist-elementwise-before-gather --canonicalize
          --fuse-elementwise-around-matmul --canonicalize
@@ -128,7 +130,42 @@ if [ "$quantize" = 1 ]; then
 fi
 # expand-strided-metadata turns a subview's offset into affine.apply, so affine
 # has to be lowered before control flow is flattened.
-MID=(--saturate-constant-casts --fold-relayout-into-producers --table-for-i8-elementwise --hoist-invariant-reciprocal --combine-channel-affine --fold-scales-into-broadcast --fold-constant-elementwise --batch-norm-in-fixed-point --sink-elementwise-into-readers --hoist-broadcast-invariants --sink-monotone-below-max-pool --plan-static-buffers --pool-without-padding --gather-to-memref-copy --expand-static-memref-copy --fill-only-the-border --fill-to-memset=below-reduction=1 --order-loops-for-locality --reciprocal-for-division --combine-constant-scales --fuse-multiply-add --select-to-minmax --drop-clamp-below-relu --clamp-as-range-check --pack-int8-max-pool --pack-int8-table-lookup --relax-float-max-pool --fill-to-memset=below-reduction=1 --convert-linalg-to-loops --promote-reduction-accumulator --unroll-reduction-windows --unroll-elementwise-loops --expand-strided-metadata --lower-affine --convert-scf-to-cf)
+MID=(# Constants first, so everything after sees folded numbers.
+     --saturate-constant-casts --fold-relayout-into-producers
+     --table-for-i8-elementwise --hoist-invariant-reciprocal
+     # --combine-channel-affine writes (x-m)*r/s as two per-channel coefficients,
+     # and its rsqrt(var+eps) is a loop until --fold-constant-elementwise folds
+     # it -- so the folder has to come after, here and not in FRONT.
+     --combine-channel-affine --fold-scales-into-broadcast --fold-constant-elementwise
+     # after the fold: it proves itself exact by evaluating 256 bytes against
+     # the coefficients, which have to be constants to be evaluated.
+     --batch-norm-in-fixed-point
+     --sink-elementwise-into-readers --hoist-broadcast-invariants
+     --sink-monotone-below-max-pool
+     # Buffers. Static from here on: the accelerator's output addresses must
+     # not move between calls on this board.
+     --plan-static-buffers
+     # before --pack-int8-max-pool, which now reads the strided bands this
+     # writes; that is what lets the padded copy go.
+     --pool-without-padding
+     --gather-to-memref-copy --expand-static-memref-copy
+     # --fill-to-memset runs twice. Here it converts the paddings; a max pool's
+     # neutral init it refuses, because a later linalg op reads it as an
+     # accumulator. After the packer below that pool is an scf.for and the init
+     # is no longer a linalg operand, so the second run converts it.
+     --fill-only-the-border --fill-to-memset=below-reduction=1
+     --order-loops-for-locality
+     # before --combine-constant-scales, so a constant divf(c) reaches it as
+     # mulf(1/c) and folds with the other scales.
+     --reciprocal-for-division --combine-constant-scales --fuse-multiply-add
+     --select-to-minmax --drop-clamp-below-relu --clamp-as-range-check
+     # Packing: eight channels to a word, and eight table indices to a load.
+     --pack-int8-max-pool --pack-int8-table-lookup --relax-float-max-pool
+     --fill-to-memset=below-reduction=1
+     # Loops. What is left of linalg becomes scf, and the loops are worked on.
+     --convert-linalg-to-loops --promote-reduction-accumulator
+     --unroll-reduction-windows --unroll-elementwise-loops
+     --expand-strided-metadata --lower-affine --convert-scf-to-cf)
 # Before func-to-llvm: a returned memref comes back as its *allocated* pointer,
 # which is not where the data is when the allocation was aligned.
 # The accelerator's buffers must not move between calls on this board, and
@@ -147,15 +184,11 @@ LOWER=(--legalize-bare-ptr-returns
        --convert-vector-to-llvm
        --convert-gemmlir-to-llvm
        --convert-index-to-llvm --convert-arith-to-llvm
-       # `math.erf` has no LLVM intrinsic, so --convert-math-to-llvm leaves it
-       # alone and it reaches mlir-translate as an unknown dialect. A GELU is
-       # `0.5x(1 + erf(x/sqrt2))`, so ConvNeXt did not compile at all until this
-       # was here. And --math-expand-ops first, because --convert-math-to-libm
-       # lowers `math.rsqrt` to a call to `rsqrtf`, which is not a libm function
-       # and does not link -- a layer norm is full of them.
-       # ...and libm *after* the LLVM conversion, not before: --convert-math-to-libm
-       # marks `math.copysign` illegal and has no pattern for it, and expanding
-       # `roundeven` -- which every quantization has -- produces one.
+       # libm for what has no LLVM intrinsic: `math.erf` otherwise reaches
+       # mlir-translate as an unknown dialect, and a GELU is 0.5x(1 + erf(x/sqrt2))
+       # -- ConvNeXt did not compile at all until this was here. After the LLVM
+       # conversion, not before: --convert-math-to-libm marks `math.copysign`
+       # illegal, and the roundeven expansion above would have produced one.
        --convert-math-to-llvm --convert-math-to-libm --convert-cf-to-llvm
        --convert-func-to-llvm="use-bare-ptr-memref-call-conv=1"
        --reconcile-unrealized-casts --canonicalize --cse
