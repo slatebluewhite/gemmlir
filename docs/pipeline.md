@@ -1,59 +1,43 @@
 # Pipeline
 
-![pipeline](img/gemmlir-pipeline.png)
-
-Order: linalg → gemmlir first, then loops/cf, then each dialect → LLVM,
-`--convert-func-to-llvm` with bare pointers, `--reconcile-unrealized-casts` last.
-
-## i8 memref input
-
-```bash
-gemmlir-opt matmul_i8.mlir \
-  --convert-linalg-to-gemmlir \
-  --convert-linalg-to-loops --expand-strided-metadata --lower-affine --convert-scf-to-cf \
-  --convert-gemmlir-to-llvm \
-  --convert-index-to-llvm --convert-arith-to-llvm --convert-math-to-llvm --convert-cf-to-llvm \
-  --convert-func-to-llvm="use-bare-ptr-memref-call-conv=1" \
-  --reconcile-unrealized-casts --canonicalize --cse \
-| mlir-translate --mlir-to-llvmir \
-| llc -O2 -march=riscv64 -mattr=+m,+a,+f,+d,+c -target-abi=lp64d -filetype=obj -o matmul.o
+```mermaid
+flowchart TD
+  A["PyTorch module"] -->|torch-mlir| B["linalg on tensors, f32"]
+  B -->|"scripts/calibrate.py: run the model,<br/>write each contraction's activation scale"| C["calibrated linalg"]
+  C -->|"FRONT: fold batch norm into the weights, quantize to int8,<br/>fuse bias / relu / requantize / pool, im2col, bufferize"| D["int8 linalg on memrefs"]
+  D -->|"--convert-linalg-to-gemmlir"| E["accelerator calls<br/>conv2d_i8 · matmul_i8 · matmul_i8_scale · resadd_i8"]
+  D -->|"everything the accelerator has no instruction for"| F["host linalg"]
+  F -->|"MID: batch norm in fixed point, i8 tables, SWAR pools,<br/>loop order, unrolling, static buffers, memsets"| G["scf loops"]
+  E --> H["LLVM dialect"]
+  G --> H
+  H -->|"mlir-translate, llc"| I["RISC-V object"]
+  I -->|"+ runtime/gemmlir_rt.o"| J["U280: Rocket + Gemmini"]
+  I -.->|"+ runtime/gemmlir_rt_cpu.o:<br/>the same object, gemmini.h's CPU path"| K["byte-for-byte reference"]
 ```
 
-## f32 tensor input (`compile.sh --quantize`)
+**The pass order is `scripts/compile.sh`.** It is the only list, and the
+reason for each placement that matters is a comment beside it there. A pass
+list written out in prose was here and drifted until it described a pipeline a
+third the size of the real one; so this document no longer keeps one.
 
-```bash
-gemmlir-opt matmul_f32_tensor.mlir \
-  --fold-batch-norm --canonicalize \
-  --force-quantized-matmul --canonicalize \
-  --share-branch-quantization --canonicalize \
-  --lower-quant-ops --round-quantized-casts --strip-func-quant-types --canonicalize \
-  --convert-elementwise-to-linalg --canonicalize \
-  --fuse-elementwise-around-matmul --canonicalize \
-  --hoist-elementwise-before-gather --canonicalize \
-  --fuse-elementwise-around-matmul --canonicalize \
-  --quantize-bias-into-accumulator --canonicalize \
-  --pointwise-conv-to-matmul --canonicalize \
-  --split-residual-add --canonicalize \
-  --one-shot-bufferize="bufferize-function-boundaries=1 function-boundary-type-conversion=identity-layout-map" \
-  --buffer-deallocation-pipeline \
-  --convert-linalg-to-gemmlir="fuse-pooling=1" \
-  --convert-linalg-to-loops --expand-strided-metadata --lower-affine --convert-scf-to-cf \
-  --plan-static-buffers \
-  --convert-gemmlir-to-llvm \
-  --convert-index-to-llvm --convert-arith-to-llvm --convert-math-to-llvm --convert-cf-to-llvm \
-  --convert-func-to-llvm="use-bare-ptr-memref-call-conv=1" \
-  --reconcile-unrealized-casts --canonicalize --cse
-```
+To see every stage for a real block -- from the PyTorch module to RISC-V, with
+the IR at each of the eleven steps and a note on what changed -- read
+[reference/lowering](reference/lowering/README.md). It is generated from
+`compile.sh`, so it cannot drift either, and its last stage is run on the board.
 
-## CPU reference (no Gemmini)
+| stage | in `compile.sh` | what it does |
+|---|---|---|
+| FRONT | `FRONT=(...)` under `--quantize` | on tensors: fold, quantize, fuse; then bufferize and convert what the accelerator can do into `gemmlir` operations |
+| MID | `MID=(...)` | on memrefs: everything the accelerator cannot do, as fast scalar loops |
+| LOWER | `LOWER=(...)` | every dialect to LLVM, then `mlir-translate` and `llc` |
 
-```bash
-mlir-opt matmul_i8.mlir \
-  --convert-linalg-to-loops --convert-scf-to-cf --canonicalize --cse \
-  --convert-math-to-llvm --convert-arith-to-llvm --expand-strided-metadata --finalize-memref-to-llvm \
-  --convert-func-to-llvm="use-bare-ptr-memref-call-conv=1" --convert-cf-to-llvm \
-  --reconcile-unrealized-casts
-```
+### The CPU reference
+
+The reference is **the same compiled object** linked against
+`runtime/gemmlir_rt_cpu.o` instead of `runtime/gemmlir_rt.o`: every accelerator
+call runs gemmini.h's own CPU implementation of that call. Nothing is
+recompiled, so a difference between the two outputs can only be the hardware.
+`regression/gate.sh` compares them byte for byte, forty runs, on every model.
 
 ## Dataflow
 

@@ -8,7 +8,20 @@ gemmlir is an out-of-tree MLIR dialect that offloads `linalg.matmul`,
 RISC-V LLVM IR. Tiling is done by the Gemmini runtime. f32 tensor inputs can be
 force-quantized to the int8 path first.
 
-![pipeline](docs/img/gemmlir-pipeline.png)
+```mermaid
+flowchart TD
+  A["PyTorch module"] -->|torch-mlir| B["linalg on tensors, f32"]
+  B -->|"scripts/calibrate.py: run the model,<br/>write each contraction's activation scale"| C["calibrated linalg"]
+  C -->|"FRONT: fold batch norm into the weights, quantize to int8,<br/>fuse bias / relu / requantize / pool, im2col, bufferize"| D["int8 linalg on memrefs"]
+  D -->|"--convert-linalg-to-gemmlir"| E["accelerator calls<br/>conv2d_i8 · matmul_i8 · matmul_i8_scale · resadd_i8"]
+  D -->|"everything the accelerator has no instruction for"| F["host linalg"]
+  F -->|"MID: batch norm in fixed point, i8 tables, SWAR pools,<br/>loop order, unrolling, static buffers, memsets"| G["scf loops"]
+  E --> H["LLVM dialect"]
+  G --> H
+  H -->|"mlir-translate, llc"| I["RISC-V object"]
+  I -->|"+ runtime/gemmlir_rt.o"| J["U280: Rocket + Gemmini"]
+  I -.->|"+ runtime/gemmlir_rt_cpu.o:<br/>the same object, gemmini.h's CPU path"| K["byte-for-byte reference"]
+```
 
 Pass pipelines: [docs/pipeline.md](docs/pipeline.md).
 
